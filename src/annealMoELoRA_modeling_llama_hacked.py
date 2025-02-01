@@ -78,12 +78,12 @@ def load_balancing_loss_func(
         annealing_factor = 0.5 * (1 + math.cos(math.pi * current_step / total_annealing_steps))
     elif annealing_type == "sigmoid":
         annealing_factor = 1
-        # if current_step - m < -2000:
-        #     annealing_factor = 1
-        # elif current_step - m > 2000:
-        #     annealing_factor = 0
-        # else:
-        #     annealing_factor = 1 - 1 / (1 + math.exp(-k * (current_step - m)))
+        if current_step - m < -2000:
+            annealing_factor = 1
+        elif current_step - m > 2000:
+            annealing_factor = 0
+        else:
+            annealing_factor = 1 - 1 / (1 + math.exp(-k * (current_step - m)))
     else:
         raise ValueError(f"Unsupported annealing_type: {annealing_type}")
 
@@ -115,10 +115,11 @@ def load_balancing_loss_func(
         # overall_loss = torch.sum(tokens_per_expert * router_prob_per_expert.unsqueeze(-1))
         layer_loss = torch.sum(tokens_per_expert * router_prob_per_expert) * num_experts[layer_i]
         overall_loss += layer_loss
-    # print(f'训练步数{current_step}/{m}，退火参数={annealing_factor}，均衡损失={overall_loss * annealing_factor}')
-    print(f'训练步数{current_step}')
-    return overall_loss
-    # return overall_loss
+    print(f'当前训练步数{current_step}/LBR points{m}，退火参数={annealing_factor}，均衡损失={overall_loss * annealing_factor}')
+    if m == 0:
+        return overall_loss
+    else:
+        return overall_loss * annealing_factor
 
 
 # def load_balancing_loss_func(gate_logits: torch.Tensor, num_experts: torch.Tensor = None, top_k=2) -> float:
